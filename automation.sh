@@ -1,6 +1,7 @@
 s3_bucket="upgrad-manikanta"
 my_name="Manikanta"
 timestamp=$(date '+%d%m%Y-%H%M%S')
+file_path=/var/www/html/inventory.html
 
 # update the packages
 sudo apt update -y
@@ -52,5 +53,28 @@ mv $my_name-httpd-logs-$timestamp.tar /tmp
 # copy the file to s3 bucket
 aws s3 cp /tmp/${my_name}-httpd-logs-${timestamp}.tar s3://${s3_bucket}/${my_name}-httpd-logs-${timestamp}.tar
 
+
+if [[ ! -e $file_path ]]
+then
+        touch $file_path
+fi
+
+
+if [[ ! -s $file_path ]]
+then
+        echo -e "Log Type\tTimeCreated\tType\tSize" > $file_path
+fi
+
+
+size=$(du -h /tmp/${my_name}-httpd-logs-$timestamp.tar | awk '{print $1}')
+echo -e "httpd-logs\t$timestamp\ttar\t$size" >> $file_path
+
+# create a cron job
+
+if [[ ! -e /etc/cron.d/automation ]]
+then
+        touch /etc/cron.d/automation
+        echo "* * * * * root /root/Automation_project//automation.sh" > /etc/cron.d/automation
+fi
 
 
